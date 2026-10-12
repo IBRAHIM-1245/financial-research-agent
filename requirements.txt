@@ -1,0 +1,2 @@
+# PDF reading: extracts text and tables from the annual reports, with page numbers
+pdfplumber>=0.11
