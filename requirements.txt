@@ -1,2 +1,8 @@
 # PDF reading: extracts text and tables from the annual reports, with page numbers
 pdfplumber>=0.11
+# OpenAI API: turns text into embedding vectors (later also answers questions)
+openai>=1.0
+# Pinecone: stores the vectors and searches them by meaning
+pinecone>=5.0
+# Loads API keys from the .env file so they never appear in code
+python-dotenv>=1.0
