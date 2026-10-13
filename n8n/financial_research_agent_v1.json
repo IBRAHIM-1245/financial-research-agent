@@ -1,267 +1,412 @@
-{
-  "name": "Financial Research Agent v1",
-  "nodes": [
-    {
-      "parameters": {
-        "content": "## Financial Research Agent - v1\nAnswers questions about the 2025-26 annual reports of TCS, Infosys and Wipro.\n\nFlow: Chat Input -> Research Agent -> Annual Report Search (fetch 20 -> Cohere rerank to 5) -> cited answer.\n\nNext versions add: input guardrail, output check, error workflow, Langfuse tracing.",
-        "height": 220,
-        "width": 520,
-        "color": 4
-      },
-      "id": "4e1d98ff-064b-453d-8cf0-9f4b54453f62",
-      "name": "About This Workflow",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        16,
-        -16
-      ]
-    },
-    {
-      "parameters": {
-        "content": "### Retrieval\nFetch 20 chunks from Pinecone, rerank with Cohere, keep top 5.\nEmbedding model MUST match ingestion: text-embedding-3-small.",
-        "width": 420,
-        "color": 5
-      },
-      "id": "a3db3848-3911-40fc-b46c-af9b8cbce424",
-      "name": "Note - Retrieval",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1056,
-        576
-      ]
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "id": "a7ba2783-4458-4e45-a96c-b47fde0f3310",
-      "name": "Chat Input",
-      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-      "typeVersion": 1.1,
-      "position": [
-        144,
-        304
-      ],
-      "webhookId": "a1b2c3d4-0099-4000-8000-000000000099"
-    },
-    {
-      "parameters": {
-        "options": {
-          "systemMessage": "You are a financial research assistant for the 2025-26 annual reports of TCS, Infosys and Wipro.\nRules:\n1. Always use the annual_report_search tool before answering.\n2. Answer ONLY from the retrieved text. Never use outside knowledge.\n3. Cite every fact as (Company, page X).\n4. If the retrieved text does not contain the answer, say: \"I could not find this in the reports.\"\n5. Keep answers short and clear."
-        }
-      },
-      "id": "31219c6d-cdb2-4ee2-80ee-2132a7725590",
-      "name": "Research Agent",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.7,
-      "position": [
-        448,
-        304
-      ],
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 1000
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-4o-mini",
-          "mode": "list",
-          "cachedResultName": "gpt-4o-mini"
+[
+  {
+    "updatedAt": "2026-10-13T05:34:51.163Z",
+    "createdAt": "2026-10-12T14:31:38.623Z",
+    "id": "1yZ3FHYOnYnWwz3C",
+    "name": "Financial Research Agent v1",
+    "description": null,
+    "active": false,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "content": "## Financial Research Agent - v1\nAnswers questions about the 2025-26 annual reports of TCS, Infosys and Wipro.\n\nFlow: Chat Input -> Research Agent -> Annual Report Search (fetch 20 -> Cohere rerank to 5) -> cited answer.\n\nNext versions add: input guardrail, output check, error workflow, Langfuse tracing.",
+          "height": 220,
+          "width": 520,
+          "color": 4
         },
-        "options": {
-          "temperature": 0
-        }
+        "id": "4e1d98ff-064b-453d-8cf0-9f4b54453f62",
+        "name": "About This Workflow",
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          16,
+          -16
+        ]
       },
-      "id": "a13e34e0-f4d5-419d-b509-bd790d051f6a",
-      "name": "LLM - gpt-4o-mini",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        304,
-        544
-      ],
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 1000,
-      "credentials": {
-        "openAiApi": {
-          "id": "Lt8ySh8MRmnDSP8s",
-          "name": "OpenAI account"
-        }
-      }
-    },
-    {
-      "parameters": {},
-      "id": "458681a4-1770-47aa-8db2-6ec0d0dfa48d",
-      "name": "Conversation Memory",
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1.3,
-      "position": [
-        480,
-        544
-      ]
-    },
-    {
-      "parameters": {
-        "mode": "retrieve-as-tool",
-        "toolDescription": "Searches the 2025-26 annual reports of TCS, Infosys and Wipro. Use for any question about these companies.",
-        "pineconeIndex": {
-          "__rl": true,
-          "value": "annual-reports",
-          "mode": "list",
-          "cachedResultName": "annual-reports"
+      {
+        "parameters": {
+          "content": "### Retrieval\nFetch 20 chunks from Pinecone, rerank with Cohere, keep top 5.\nEmbedding model MUST match ingestion: text-embedding-3-small.",
+          "width": 420,
+          "color": 5
         },
-        "topK": 20,
-        "useReranker": true,
-        "options": {}
+        "id": "a3db3848-3911-40fc-b46c-af9b8cbce424",
+        "name": "Note - Retrieval",
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          1056,
+          576
+        ]
       },
-      "id": "cdacd67b-eb35-4966-93e7-7f571f19abba",
-      "name": "Annual Report Search",
-      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
-      "typeVersion": 1.3,
-      "position": [
-        720,
-        528
-      ],
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 1000,
-      "credentials": {
-        "pineconeApi": {
-          "id": "ydfQ24VoATXijmhQ",
-          "name": "Pinecone account"
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "a7ba2783-4458-4e45-a96c-b47fde0f3310",
+        "name": "Chat Input",
+        "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+        "typeVersion": 1.1,
+        "position": [
+          -176,
+          304
+        ],
+        "webhookId": "a1b2c3d4-0099-4000-8000-000000000099"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $('Chat Input').item.json.chatInput }}",
+          "options": {
+            "systemMessage": "You are a financial research assistant for the 2025-26 annual reports of TCS, Infosys and Wipro.\nRules:\n1. Always use the annual_report_search tool before answering.\n2. Answer ONLY from the retrieved text. Never use outside knowledge.\n3. Cite every fact with the real company name and page number from the search results, for example (TCS, page 108) or (Infosys, page 130). Never write the word \"Company\" in a citation.\n4. If the retrieved text does not contain the answer, say: \"I could not find this in the reports.\"\n5. Keep answers short and clear.",
+            "maxIterations": 5,
+            "returnIntermediateSteps": false
+          }
+        },
+        "id": "31219c6d-cdb2-4ee2-80ee-2132a7725590",
+        "name": "Research Agent",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 1.7,
+        "position": [
+          720,
+          256
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 1000
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gpt-4o-mini",
+            "mode": "list",
+            "cachedResultName": "gpt-4o-mini"
+          },
+          "options": {
+            "temperature": 0
+          }
+        },
+        "id": "a13e34e0-f4d5-419d-b509-bd790d051f6a",
+        "name": "LLM - gpt-4o-mini",
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          544,
+          416
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 1000,
+        "credentials": {
+          "openAiApi": {
+            "id": "Lt8ySh8MRmnDSP8s",
+            "name": "OpenAI account"
+          }
         }
+      },
+      {
+        "parameters": {
+          "sessionIdType": "customKey",
+          "sessionKey": "={{ $('Chat Input').item.json.sessionId }}"
+        },
+        "id": "458681a4-1770-47aa-8db2-6ec0d0dfa48d",
+        "name": "Conversation Memory",
+        "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+        "typeVersion": 1.3,
+        "position": [
+          656,
+          480
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "retrieve-as-tool",
+          "toolDescription": "Searches the 2025-26 annual reports of TCS, Infosys and Wipro. Use for any question about these companies.",
+          "pineconeIndex": {
+            "__rl": true,
+            "value": "annual-reports",
+            "mode": "list",
+            "cachedResultName": "annual-reports"
+          },
+          "topK": 20,
+          "useReranker": true,
+          "options": {}
+        },
+        "id": "cdacd67b-eb35-4966-93e7-7f571f19abba",
+        "name": "Annual Report Search",
+        "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+        "typeVersion": 1.3,
+        "position": [
+          784,
+          528
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 1000,
+        "credentials": {
+          "pineconeApi": {
+            "id": "ydfQ24VoATXijmhQ",
+            "name": "Pinecone account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "2a467ba8-0b5b-4322-b9bd-6ef1697b60ee",
+        "name": "Query Embeddings",
+        "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          720,
+          864
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 1000,
+        "credentials": {
+          "openAiApi": {
+            "id": "Lt8ySh8MRmnDSP8s",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "topN": 5
+        },
+        "id": "227163fe-6220-4557-98ba-fd89652d3195",
+        "name": "Cohere Rerank",
+        "type": "@n8n/n8n-nodes-langchain.rerankerCohere",
+        "typeVersion": 1,
+        "position": [
+          928,
+          864
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 1000,
+        "credentials": {
+          "cohereApi": {
+            "id": "DzRVRoJeBMASM9Ti",
+            "name": "Cohere account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "text": "={{ $json.chatInput }}",
+          "guardrails": {
+            "jailbreak": {
+              "value": {
+                "threshold": 0.7
+              }
+            },
+            "topicalAlignment": {
+              "value": {
+                "threshold": 0.7,
+                "prompt": "You are a content analysis system that checks if a user question is within the allowed scope.\n\nALLOWED SCOPE: Questions about TCS, Infosys or Wipro: their business, financials, employees, risks, strategy, leadership or operations, as described in their 2025-26 annual reports. Short follow-up questions about these companies (for example \"what about their revenue?\" or \"and Infosys?\") are also allowed.\n\nOFF-TOPIC: Anything not about these three companies, such as general knowledge, other companies, coding help, personal advice, jokes or chit-chat.\n\nScoring: give a confidence score near 1.0 when the text is clearly OFF-TOPIC, and near 0.0 when it is clearly within the allowed scope.\n\nExamples:\n- \"What is the capital of France?\" -> off-topic (0.95)\n- \"Write me a Python script\" -> off-topic (0.95)\n- \"What is Apple's revenue?\" -> off-topic (0.9)\n- \"How many employees does TCS have?\" -> allowed (0.0)\n- \"What are Wipro's main risks?\" -> allowed (0.0)\n- \"And what about Infosys?\" -> allowed (0.1)"
+              }
+            }
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.guardrails",
+        "typeVersion": 2,
+        "position": [
+          144,
+          304
+        ],
+        "id": "a634da3b-a464-4e1c-a0f6-d504655b5c67",
+        "name": "Input Guardrail"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gpt-4o-mini",
+            "mode": "list",
+            "cachedResultName": "gpt-4o-mini"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          80,
+          512
+        ],
+        "id": "7e021401-1efb-4ff8-ba03-433af2f6d0a2",
+        "name": "Guard LLM - gpt-4o-mini",
+        "credentials": {
+          "openAiApi": {
+            "id": "Lt8ySh8MRmnDSP8s",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "edbd524f-91aa-435f-b24f-594e214cbdd9",
+                "name": "output",
+                "value": "Sorry, I can only answer questions about the 2025-26 annual reports of TCS, Infosys and Wipro.",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.5,
+        "position": [
+          368,
+          512
+        ],
+        "id": "9b1f1572-1965-45c5-a6c3-e178784c3d66",
+        "name": "Refusal Message"
+      }
+    ],
+    "connections": {
+      "Chat Input": {
+        "main": [
+          [
+            {
+              "node": "Input Guardrail",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "LLM - gpt-4o-mini": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Research Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Conversation Memory": {
+        "ai_memory": [
+          [
+            {
+              "node": "Research Agent",
+              "type": "ai_memory",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Annual Report Search": {
+        "ai_tool": [
+          [
+            {
+              "node": "Research Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Query Embeddings": {
+        "ai_embedding": [
+          [
+            {
+              "node": "Annual Report Search",
+              "type": "ai_embedding",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Cohere Rerank": {
+        "ai_reranker": [
+          [
+            {
+              "node": "Annual Report Search",
+              "type": "ai_reranker",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Input Guardrail": {
+        "main": [
+          [
+            {
+              "node": "Research Agent",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Refusal Message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Guard LLM - gpt-4o-mini": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Input Guardrail",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "id": "2a467ba8-0b5b-4322-b9bd-6ef1697b60ee",
-      "name": "Query Embeddings",
-      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        720,
-        864
-      ],
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 1000,
-      "credentials": {
-        "openAiApi": {
-          "id": "Lt8ySh8MRmnDSP8s",
-          "name": "OpenAI account"
-        }
-      }
+    "settings": {
+      "executionOrder": "v1",
+      "binaryMode": "separate"
     },
-    {
-      "parameters": {
-        "topN": 5
-      },
-      "id": "227163fe-6220-4557-98ba-fd89652d3195",
-      "name": "Cohere Rerank",
-      "type": "@n8n/n8n-nodes-langchain.rerankerCohere",
-      "typeVersion": 1,
-      "position": [
-        928,
-        864
-      ],
-      "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 1000,
-      "credentials": {
-        "cohereApi": {
-          "id": "DzRVRoJeBMASM9Ti",
-          "name": "Cohere account"
+    "staticData": null,
+    "meta": {
+      "templateCredsSetupCompleted": true
+    },
+    "nodeGroups": [],
+    "pinData": {},
+    "versionId": "4fb62528-3033-4d74-bdb3-4a36768554f1",
+    "activeVersionId": null,
+    "versionCounter": 49,
+    "triggerCount": 0,
+    "sourceWorkflowId": null,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-10-12T14:31:38.630Z",
+        "createdAt": "2026-10-12T14:31:38.630Z",
+        "role": "workflow:owner",
+        "workflowId": "1yZ3FHYOnYnWwz3C",
+        "projectId": "P9CnVZgAgbGGFNnc",
+        "project": {
+          "updatedAt": "2026-10-12T14:29:09.221Z",
+          "createdAt": "2026-10-12T14:27:43.996Z",
+          "id": "P9CnVZgAgbGGFNnc",
+          "name": "Ibrahim SK <ibrahimshaik862@gmail.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "customTelemetryTags": [],
+          "creatorId": "8a2c7fa5-67ee-4203-8054-1d76675c8b51"
         }
       }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
     }
-  ],
-  "pinData": {},
-  "connections": {
-    "Chat Input": {
-      "main": [
-        [
-          {
-            "node": "Research Agent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "LLM - gpt-4o-mini": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Research Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Conversation Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "Research Agent",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Annual Report Search": {
-      "ai_tool": [
-        [
-          {
-            "node": "Research Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Query Embeddings": {
-      "ai_embedding": [
-        [
-          {
-            "node": "Annual Report Search",
-            "type": "ai_embedding",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Cohere Rerank": {
-      "ai_reranker": [
-        [
-          {
-            "node": "Annual Report Search",
-            "type": "ai_reranker",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
-  "active": false,
-  "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate"
-  },
-  "versionId": "0a8ee976-950a-4259-af4a-3f9552ee855d",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "b7ba73761a6e4b13caf0bdf60d94620dfd5455fa73e300b1c4bda282f07c640e"
-  },
-  "nodeGroups": [],
-  "id": "1yZ3FHYOnYnWwz3C",
-  "tags": []
-}
+  }
+]
