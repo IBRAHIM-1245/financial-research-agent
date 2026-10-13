@@ -4,13 +4,13 @@ Agentic RAG system that answers questions on the 2025-26 annual reports of TCS, 
 
 ## How it works
 - **Ingestion (Python):** PDF → page text → 300-word overlapping chunks with metadata → OpenAI embeddings → Pinecone
-- **Agent (n8n):** AI Agent searches Pinecone, Cohere reranks 20 results to the best 5, and answers only from retrieved text with (Company, page) citations
+- **Agent (n8n):** Input guardrail → AI Agent searches Pinecone, Cohere reranks 20 results to the best 5 → answer with (Company, page) citations → verifier checks every fact against the sources → low-confidence answers are replaced with an honest message
 
 ## Status
 - [x] Ingestion pipeline (2,755 chunks)
 - [x] n8n RAG agent with Cohere rerank
-- [ ] Input guardrails
-- [ ] Answer verification and confidence score
+- [x] Input guardrails (jailbreak, PII, secret keys, topic)
+- [x] Answer verification with confidence score (OpenAI JSON schema)
 - [ ] SQL tool for financial tables
 - [ ] Langfuse tracing and evaluation
 
