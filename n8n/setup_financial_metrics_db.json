@@ -1,0 +1,716 @@
+[
+  {
+    "updatedAt": "2026-10-13T10:02:34.698Z",
+    "createdAt": "2026-10-13T09:23:11.265Z",
+    "id": "nwBZ9cpYIK64pQYR",
+    "name": "Setup - Financial Metrics DB",
+    "description": null,
+    "active": false,
+    "isArchived": false,
+    "nodes": [
+      {
+        "parameters": {
+          "content": "## Setup - Financial Metrics DB\nOne-time setup for the SQL tool. NOT part of the live agent.\n\n1. Create table (safe to rerun)\n2. Build 24 jobs: 3 companies x 8 metrics\n3. Metric Extractor searches the reports and returns JSON (found, value, page, evidence)\n4. Only found values are saved, with verified = false\n5. A human checks each value against the PDF and sets verified = true\n\nDatabase: Neon Postgres (finance), SSL required.",
+          "height": 280,
+          "width": 520,
+          "color": 4
+        },
+        "id": "6f35549f-107b-417b-bbf8-9d1c5714331f",
+        "name": "About This Workflow",
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          32,
+          64
+        ]
+      },
+      {
+        "parameters": {
+          "content": "### Extraction\nAgent searches Pinecone (fetch 20, Cohere rerank to 5).\nModel uses JSON mode so output is always valid JSON.\nPrefers consolidated figures; converts Indian number format to plain digits.",
+          "height": 180,
+          "width": 420,
+          "color": 5
+        },
+        "id": "a9b262ca-40e0-4f63-9cfe-42b9d96fec3e",
+        "name": "Note - Extraction",
+        "type": "n8n-nodes-base.stickyNote",
+        "typeVersion": 1,
+        "position": [
+          1872,
+          768
+        ]
+      },
+      {
+        "parameters": {},
+        "id": "62114b31-7046-4139-ab99-7cc387aadaaf",
+        "name": "Run Setup",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          96,
+          448
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "CREATE TABLE IF NOT EXISTS financial_metrics (\n  id SERIAL PRIMARY KEY,\n  company TEXT NOT NULL,\n  ticker TEXT NOT NULL,\n  fiscal_year TEXT NOT NULL,\n  metric TEXT NOT NULL,\n  value NUMERIC NOT NULL,\n  unit TEXT NOT NULL,\n  source_page INTEGER NOT NULL,\n  verified BOOLEAN DEFAULT FALSE,\n  UNIQUE (company, fiscal_year, metric)\n);\nALTER TABLE financial_metrics ADD COLUMN IF NOT EXISTS evidence TEXT;",
+          "options": {}
+        },
+        "id": "b968ed92-06ba-4555-9531-81038c17cf29",
+        "name": "Create metrics table",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          320,
+          448
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 1000,
+        "credentials": {
+          "postgres": {
+            "id": "CyowQ6NmXveHqGKx",
+            "name": "Postgres account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "{\n  \"companies\": [\n    { \"company\": \"TCS\", \"ticker\": \"TCS\" },\n    { \"company\": \"Infosys\", \"ticker\": \"INFY\" },\n    { \"company\": \"Wipro\", \"ticker\": \"WIPRO\" }\n  ]\n}",
+          "options": {}
+        },
+        "id": "ee5efd01-4c53-4827-8aa5-097126cf8235",
+        "name": "Companies",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          544,
+          448
+        ],
+        "executeOnce": true
+      },
+      {
+        "parameters": {
+          "fieldToSplitOut": "companies",
+          "options": {}
+        },
+        "id": "65b3ab2a-2dc2-4caf-a342-93575fb05aeb",
+        "name": "Split Out Companies",
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          752,
+          448
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "raw",
+          "jsonOutput": "{\n  \"metrics\": [\n    { \"metric\": \"revenue_consolidated\", \"unit\": \"INR crore\", \"description\": \"Total consolidated revenue from operations for the full financial year 2025-26, in INR crore\" },\n    { \"metric\": \"net_profit_consolidated\", \"unit\": \"INR crore\", \"description\": \"Consolidated net profit (profit for the year) for financial year 2025-26, in INR crore\" },\n    { \"metric\": \"operating_margin\", \"unit\": \"%\", \"description\": \"Operating margin (operating profit as a percentage of revenue) for financial year 2025-26\" },\n    { \"metric\": \"earnings_per_share\", \"unit\": \"INR\", \"description\": \"Basic earnings per share for financial year 2025-26, in INR\" },\n    { \"metric\": \"dividend_per_share\", \"unit\": \"INR\", \"description\": \"Total dividend per share declared for financial year 2025-26, in INR\" },\n    { \"metric\": \"total_employees\", \"unit\": \"count\", \"description\": \"Total number of employees at the end of financial year 2025-26\" },\n    { \"metric\": \"attrition_rate\", \"unit\": \"%\", \"description\": \"Employee attrition or turnover rate for financial year 2025-26\" },\n    { \"metric\": \"women_employees_pct\", \"unit\": \"%\", \"description\": \"Percentage of women in the total workforce at the end of financial year 2025-26\" }\n  ]\n}",
+          "includeOtherFields": true,
+          "options": {}
+        },
+        "id": "0d500a4a-be9b-4a32-94ba-5f8c0ad60dfa",
+        "name": "Metrics",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          976,
+          448
+        ]
+      },
+      {
+        "parameters": {
+          "fieldToSplitOut": "metrics",
+          "include": "allOtherFields",
+          "options": {}
+        },
+        "id": "578ee69e-3957-4db7-a3ee-dfe70bf68338",
+        "name": "Split Out Metrics",
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          1200,
+          448
+        ]
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Find this metric in the {{ $json.company }} 2025-26 annual report.\n\nCompany: {{ $json.company }}\nMetric: {{ $json.metrics.metric }}\nDefinition: {{ $json.metrics.description }}\nExpected unit: {{ $json.metrics.unit }}\n\nUse the annual_report_search tool. Include the company name and the metric in your search query.\n\nRules:\n- Use ONLY numbers that appear in the search results for {{ $json.company }}. Never guess or use outside knowledge.\n- For money amounts, prefer CONSOLIDATED figures over standalone figures.\n- Convert Indian number format to plain digits: 6,17,437 becomes 617437.\n- Give the value in the expected unit. Percentages as plain numbers (12.5 means 12.5%).\n- page = the page number from the metadata of the source you used.\n- evidence = a short exact quote of the line that contains the number.\n- If the value is not in the search results, set found to false and value and page to null.\n\nRespond in JSON only, exactly like this:\n{\"found\": true, \"value\": 617437, \"page\": 108, \"evidence\": \"Total employees 6,17,437\"}",
+          "options": {
+            "maxIterations": 5
+          }
+        },
+        "id": "d0a864c8-d142-4a05-9c48-24d2c1bc82a0",
+        "name": "Metric Extractor",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 1.7,
+        "position": [
+          1440,
+          448
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 2000,
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gpt-4o-mini",
+            "mode": "list",
+            "cachedResultName": "gpt-4o-mini"
+          },
+          "options": {
+            "responseFormat": "json_object",
+            "temperature": 0
+          }
+        },
+        "id": "51423c9d-0729-4ab7-b3a6-5db3acbd655d",
+        "name": "Extractor LLM - gpt-4o-mini",
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          1344,
+          688
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 1000,
+        "credentials": {
+          "openAiApi": {
+            "id": "Lt8ySh8MRmnDSP8s",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "retrieve-as-tool",
+          "toolDescription": "Searches the 2025-26 annual reports of TCS, Infosys and Wipro. Returns text chunks with company and page metadata.",
+          "pineconeIndex": {
+            "__rl": true,
+            "value": "annual-reports",
+            "mode": "list",
+            "cachedResultName": "annual-reports"
+          },
+          "topK": 20,
+          "useReranker": true,
+          "options": {}
+        },
+        "id": "2864e0c6-c95f-4370-844c-85765333b3a8",
+        "name": "Report Search",
+        "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+        "typeVersion": 1.3,
+        "position": [
+          1552,
+          688
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 1000,
+        "credentials": {
+          "pineconeApi": {
+            "id": "ydfQ24VoATXijmhQ",
+            "name": "Pinecone account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "ec80fa00-c917-48e4-a4fe-95095a849f46",
+        "name": "Query Embeddings",
+        "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          1504,
+          912
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 1000,
+        "credentials": {
+          "openAiApi": {
+            "id": "Lt8ySh8MRmnDSP8s",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "topN": 5
+        },
+        "id": "2219f9cd-5f87-47f2-89f0-e560f27e6542",
+        "name": "Cohere Rerank",
+        "type": "@n8n/n8n-nodes-langchain.rerankerCohere",
+        "typeVersion": 1,
+        "position": [
+          1680,
+          912
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 1000,
+        "credentials": {
+          "cohereApi": {
+            "id": "DzRVRoJeBMASM9Ti",
+            "name": "Cohere account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 1
+            },
+            "conditions": [
+              {
+                "id": "c0000001-0000-4000-8000-000000000001",
+                "leftValue": "={{ JSON.parse($json.output).found }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "c0000001-0000-4000-8000-000000000002",
+                "leftValue": "={{ JSON.parse($json.output).value }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "number",
+                  "operation": "exists",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "85b2e594-acee-4d44-9b61-7cb97938b8f9",
+        "name": "Only Found Values",
+        "type": "n8n-nodes-base.filter",
+        "typeVersion": 2,
+        "position": [
+          1696,
+          448
+        ]
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "d0000001-0000-4000-8000-000000000001",
+                "name": "company",
+                "value": "={{ $('Split Out Metrics').item.json.company }}",
+                "type": "string"
+              },
+              {
+                "id": "d0000001-0000-4000-8000-000000000002",
+                "name": "ticker",
+                "value": "={{ $('Split Out Metrics').item.json.ticker }}",
+                "type": "string"
+              },
+              {
+                "id": "d0000001-0000-4000-8000-000000000003",
+                "name": "fiscal_year",
+                "value": "2025-26",
+                "type": "string"
+              },
+              {
+                "id": "d0000001-0000-4000-8000-000000000004",
+                "name": "metric",
+                "value": "={{ $('Split Out Metrics').item.json.metrics.metric }}",
+                "type": "string"
+              },
+              {
+                "id": "d0000001-0000-4000-8000-000000000005",
+                "name": "value",
+                "value": "={{ JSON.parse($json.output).value }}",
+                "type": "number"
+              },
+              {
+                "id": "d0000001-0000-4000-8000-000000000006",
+                "name": "unit",
+                "value": "={{ $('Split Out Metrics').item.json.metrics.unit }}",
+                "type": "string"
+              },
+              {
+                "id": "d0000001-0000-4000-8000-000000000007",
+                "name": "source_page",
+                "value": "={{ JSON.parse($json.output).page }}",
+                "type": "number"
+              },
+              {
+                "id": "d0000001-0000-4000-8000-000000000008",
+                "name": "evidence",
+                "value": "={{ JSON.parse($json.output).evidence }}",
+                "type": "string"
+              },
+              {
+                "id": "d0000001-0000-4000-8000-000000000009",
+                "name": "verified",
+                "value": false,
+                "type": "boolean"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "091c472b-27f9-461d-b95c-7bbe9e2c15ee",
+        "name": "Prepare Row",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1920,
+          448
+        ]
+      },
+      {
+        "parameters": {
+          "schema": {
+            "__rl": true,
+            "value": "public",
+            "mode": "list",
+            "cachedResultName": "public"
+          },
+          "table": {
+            "__rl": true,
+            "value": "financial_metrics",
+            "mode": "list",
+            "cachedResultName": "financial_metrics"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {
+              "verified": false
+            },
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [
+              {
+                "id": "id",
+                "displayName": "id",
+                "required": false,
+                "defaultMatch": true,
+                "display": true,
+                "type": "number",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "company",
+                "displayName": "company",
+                "required": true,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "ticker",
+                "displayName": "ticker",
+                "required": true,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "fiscal_year",
+                "displayName": "fiscal_year",
+                "required": true,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "metric",
+                "displayName": "metric",
+                "required": true,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "value",
+                "displayName": "value",
+                "required": true,
+                "defaultMatch": false,
+                "display": true,
+                "type": "number",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "unit",
+                "displayName": "unit",
+                "required": true,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "source_page",
+                "displayName": "source_page",
+                "required": true,
+                "defaultMatch": false,
+                "display": true,
+                "type": "number",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "verified",
+                "displayName": "verified",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "boolean",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "evidence",
+                "displayName": "evidence",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {
+            "skipOnConflict": true
+          }
+        },
+        "id": "1a8df6e0-6241-4a51-b5b9-1094bd84f11a",
+        "name": "Save Metric",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          2144,
+          448
+        ],
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 1000,
+        "credentials": {
+          "postgres": {
+            "id": "CyowQ6NmXveHqGKx",
+            "name": "Postgres account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Run Setup": {
+        "main": [
+          [
+            {
+              "node": "Create metrics table",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create metrics table": {
+        "main": [
+          [
+            {
+              "node": "Companies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Companies": {
+        "main": [
+          [
+            {
+              "node": "Split Out Companies",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Out Companies": {
+        "main": [
+          [
+            {
+              "node": "Metrics",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Metrics": {
+        "main": [
+          [
+            {
+              "node": "Split Out Metrics",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Split Out Metrics": {
+        "main": [
+          [
+            {
+              "node": "Metric Extractor",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Metric Extractor": {
+        "main": [
+          [
+            {
+              "node": "Only Found Values",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Only Found Values": {
+        "main": [
+          [
+            {
+              "node": "Prepare Row",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Row": {
+        "main": [
+          [
+            {
+              "node": "Save Metric",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extractor LLM - gpt-4o-mini": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Metric Extractor",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Report Search": {
+        "ai_tool": [
+          [
+            {
+              "node": "Metric Extractor",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Query Embeddings": {
+        "ai_embedding": [
+          [
+            {
+              "node": "Report Search",
+              "type": "ai_embedding",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Cohere Rerank": {
+        "ai_reranker": [
+          [
+            {
+              "node": "Report Search",
+              "type": "ai_reranker",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1",
+      "binaryMode": "separate"
+    },
+    "staticData": null,
+    "meta": null,
+    "nodeGroups": [],
+    "pinData": {},
+    "versionId": "95c51550-f826-4e01-942e-05655cc8c470",
+    "activeVersionId": null,
+    "versionCounter": 12,
+    "triggerCount": 0,
+    "sourceWorkflowId": null,
+    "tags": [],
+    "shared": [
+      {
+        "updatedAt": "2026-10-13T09:23:11.268Z",
+        "createdAt": "2026-10-13T09:23:11.268Z",
+        "role": "workflow:owner",
+        "workflowId": "nwBZ9cpYIK64pQYR",
+        "projectId": "P9CnVZgAgbGGFNnc",
+        "project": {
+          "updatedAt": "2026-10-12T14:29:09.221Z",
+          "createdAt": "2026-10-12T14:27:43.996Z",
+          "id": "P9CnVZgAgbGGFNnc",
+          "name": "Ibrahim SK <ibrahimshaik862@gmail.com>",
+          "type": "personal",
+          "icon": null,
+          "description": null,
+          "customTelemetryTags": [],
+          "creatorId": "8a2c7fa5-67ee-4203-8054-1d76675c8b51"
+        }
+      }
+    ],
+    "versionMetadata": {
+      "name": null,
+      "description": null
+    }
+  }
+]
