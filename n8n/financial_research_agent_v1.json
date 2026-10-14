@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-10-13T06:23:24.355Z",
+    "updatedAt": "2026-10-14T06:28:43.626Z",
     "createdAt": "2026-10-12T14:31:38.623Z",
     "id": "1yZ3FHYOnYnWwz3C",
     "name": "Financial Research Agent v1",
@@ -58,7 +58,7 @@
           "promptType": "define",
           "text": "={{ $('Chat Input').item.json.chatInput }}",
           "options": {
-            "systemMessage": "You are a financial research assistant for the 2025-26 annual reports of TCS, Infosys and Wipro.\nRules:\n1. Always use the annual_report_search tool before answering.\n2. Answer ONLY from the retrieved text. Never use outside knowledge.\n3. Cite every fact with the real company name and page number from the search results, for example (TCS, page 108) or (Infosys, page 130). Never write the word \"Company\" in a citation.\n4. If the retrieved text does not contain the answer, say: \"I could not find this in the reports.\"\n5. Keep answers short and clear.",
+            "systemMessage": "You are a financial research assistant for the 2025-26 annual reports of TCS, Infosys and Wipro.\n\nTools:\n- Financial_Metrics_SQL: exact verified numbers for revenue, net profit, operating margin, EPS, dividend per share, total employees, attrition rate and women employees %. Use it FIRST for any of these numbers or for comparisons.\n- Annual_Report_Search: everything else in the reports (risks, strategy, AI plans, leadership, explanations behind numbers).\nUse both when a question needs a number and its explanation.\n\nRules:\n1. Answer ONLY from tool results. Never use outside knowledge.\n2. Cite every fact with the real company name and page, for example (TCS, page 108). For SQL results use source_page.\n3. Operating margin is defined differently by each company (TCS: EBIT margin, Infosys: adjusted operating margin, Wipro: IT Services margin). Mention this when comparing margins.\n4. If the tools do not contain the answer, say: \"I could not find this in the reports.\"\n5. Keep answers short and clear.",
             "maxIterations": 5,
             "returnIntermediateSteps": true
           }
@@ -92,8 +92,8 @@
         "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
         "typeVersion": 1.2,
         "position": [
-          544,
-          416
+          528,
+          400
         ],
         "retryOnFail": true,
         "maxTries": 3,
@@ -352,13 +352,13 @@
       {
         "parameters": {
           "promptType": "define",
-          "text": "=You are a strict fact-checker for a financial research assistant.\n\nCheck whether every fact and number in the ANSWER is supported by the SOURCES.\n\nImportant rules:\n- Indian and international number formats are the SAME value. Example: 6,17,437 = 617,437 and 1,23,45,678 = 12,345,678.\n- Each source has metadata with \"company\" and \"page\". A citation like (TCS, page 108) is supported if a source has company TCS and page 108.\n- Rewording is fine. Only judge whether the facts and numbers match.\n\nScoring:\n- All facts supported -> confidence 0.8 to 1.0.\n- Any fact or number missing from or contradicting the SOURCES -> confidence below 0.5, and list those claims.\n- If the ANSWER says the information could not be found -> supported true, confidence 1.0.\n\nQUESTION:\n{{ $('Chat Input').item.json.chatInput }}\n\nANSWER:\n{{ $json.output }}\n\nSOURCES:\n{{ JSON.stringify($json.intermediateSteps) }}\n\nRespond in JSON with exactly these keys: supported (true/false), confidence (number 0 to 1), unsupported_claims (list), reason (short text).",
+          "text": "=You are a strict fact-checker for a financial research assistant.\n\nCheck whether every fact and number in the ANSWER is supported by the SOURCES.\n\nImportant rules:\n- Indian and international number formats are the SAME value. Example: 6,17,437 = 617,437 and 1,23,45,678 = 12,345,678.\n- Each source has metadata with \"company\" and \"page\". A citation like (TCS, page 108) is supported if a source has company TCS and page 108.\n- Rows returned by the SQL tool are valid sources. A citation like (Wipro, page 96) is supported if a row has that company and source_page. Values in SQL rows are already in their unit (INR crore, %, count).\n- Every page number cited in the ANSWER must appear in the SOURCES (metadata page or SQL source_page). A citation whose page is not in the SOURCES is unsupported, even if the number is correct.\n- Rewording is fine. Only judge whether the facts and numbers match.\n\nScoring:\n- All facts and citations supported -> confidence 0.8 to 1.0.\n- Any fact, number or page missing from or contradicting the SOURCES -> confidence below 0.5, and list those claims.\n- If the ANSWER says the information could not be found -> supported true, confidence 1.0.\n\nQUESTION:\n{{ $('Chat Input').item.json.chatInput }}\n\nANSWER:\n{{ $json.output }}\n\nSOURCES:\n{{ JSON.stringify($json.intermediateSteps) }}\n\nRespond in JSON with exactly these keys: supported (true/false), confidence (number 0 to 1), unsupported_claims (list), reason (short text).",
           "batching": {}
         },
         "type": "@n8n/n8n-nodes-langchain.chainLlm",
         "typeVersion": 1.9,
         "position": [
-          1104,
+          1152,
           288
         ],
         "id": "c9081e26-46bd-463f-8c48-360f81b930ef",
@@ -387,8 +387,8 @@
         "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
         "typeVersion": 1.3,
         "position": [
-          1104,
-          496
+          1200,
+          480
         ],
         "id": "28b43a9a-700d-4ad1-b256-39dbb3450241",
         "name": "Verify LLM - gpt-4o-mini",
@@ -396,6 +396,29 @@
           "openAiApi": {
             "id": "Lt8ySh8MRmnDSP8s",
             "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "descriptionType": "manual",
+          "toolDescription": "Runs one read-only SQL SELECT on the table verified_metrics, which holds exact, human-verified 2025-26 figures.\nColumns: company ('TCS','Infosys','Wipro'), ticker, fiscal_year ('2025-26'), metric, value, unit, source_page.\nMetrics: revenue_consolidated (INR crore), net_profit_consolidated (INR crore), operating_margin (%), earnings_per_share (INR), dividend_per_share (INR), total_employees (count), attrition_rate (%), women_employees_pct (%).\nUse this for any number or comparison of these metrics. Always select company, metric, value, unit and source_page.",
+          "operation": "executeQuery",
+          "query": "{{ $fromAI('sql_query', 'One PostgreSQL SELECT on verified_metrics. It MUST select company, metric, value, unit, source_page', 'string') }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.postgresTool",
+        "typeVersion": 2.7,
+        "position": [
+          1040,
+          416
+        ],
+        "id": "9111ebfd-463f-4051-a714-3afef1bc53b0",
+        "name": "Financial Metrics SQL",
+        "credentials": {
+          "postgres": {
+            "id": "zVzXCHgdaK0T6lQN",
+            "name": "Postgres account 2"
           }
         }
       }
@@ -546,6 +569,17 @@
             }
           ]
         ]
+      },
+      "Financial Metrics SQL": {
+        "ai_tool": [
+          [
+            {
+              "node": "Research Agent",
+              "type": "ai_tool",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "settings": {
@@ -558,9 +592,9 @@
     },
     "nodeGroups": [],
     "pinData": {},
-    "versionId": "c7c1b5e4-c461-41a6-b7da-4535f9784e14",
+    "versionId": "0354fb55-256c-4479-912b-00ace401f11d",
     "activeVersionId": null,
-    "versionCounter": 124,
+    "versionCounter": 140,
     "triggerCount": 0,
     "sourceWorkflowId": null,
     "tags": [],

@@ -11,7 +11,7 @@ Agentic RAG system that answers questions on the 2025-26 annual reports of TCS, 
 - [x] n8n RAG agent with Cohere rerank
 - [x] Input guardrails (jailbreak, PII, secret keys, topic)
 - [x] Answer verification with confidence score (OpenAI JSON schema)
-- [ ] SQL tool for financial tables
+- [x] SQL tool on 24 human-verified metrics (read-only role, verified view)
 - [ ] Langfuse tracing and evaluation
 
 Setup: see `docs/SETUP.md`.

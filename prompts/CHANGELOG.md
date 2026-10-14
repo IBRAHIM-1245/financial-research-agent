@@ -19,3 +19,8 @@
 - Bug: prompt field in Fixed mode, so {{ }} variables were sent as literal text and the verifier judged invented claims (0.4). Switched to Expression mode.
 - Bug: agent did not pass sources. Enabled Return Intermediate Steps.
 - v2 rules: Indian/international number formats are equal; citations checked against metadata (company, page). Correct TCS answer now scores 1.0.
+
+## Research Agent v3 + SQL tool
+- Added Financial_Metrics_SQL tool (read-only agent_reader login, verified_metrics view only).
+- Prompt v3: SQL first for the 8 numeric metrics, search for everything else; operating-margin definition caveat.
+- Bug: agent selected no source_page and copied pages from conversation memory (attrition cited revenue pages). Fix: tool query must select source_page; verifier now rejects any cited page not in the sources.
