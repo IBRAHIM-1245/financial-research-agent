@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-10-14T06:28:43.626Z",
+    "updatedAt": "2026-10-14T07:41:54.570Z",
     "createdAt": "2026-10-12T14:31:38.623Z",
     "id": "1yZ3FHYOnYnWwz3C",
     "name": "Financial Research Agent v1",
@@ -282,7 +282,7 @@
             "conditions": [
               {
                 "id": "cc8702a4-0f5b-4006-b410-7e707d71bce1",
-                "leftValue": "={{ JSON.parse($json.text).confidence }}",
+                "leftValue": "={{ JSON.parse($('Answer Verifier').item.json.text).confidence }}",
                 "rightValue": 0.7,
                 "operator": {
                   "type": "number",
@@ -297,7 +297,7 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          1456,
+          1712,
           288
         ],
         "id": "ffa8da3d-e5b0-433c-8987-5f21c4a659ae",
@@ -320,8 +320,8 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.5,
         "position": [
-          1680,
-          224
+          1920,
+          128
         ],
         "id": "7475028a-5e45-4ab5-9608-9829d802b4a0",
         "name": "Final Answer"
@@ -343,8 +343,8 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.5,
         "position": [
-          1680,
-          400
+          1968,
+          432
         ],
         "id": "19d8d511-41b9-402f-8bef-b69004f6ef47",
         "name": "Low Confidence Message"
@@ -421,6 +421,33 @@
             "name": "Postgres account 2"
           }
         }
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://cloud.langfuse.com/api/public/ingestion",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={{ JSON.stringify({\n  batch: [\n    {\n      id: 'trace-' + $execution.id,\n      type: 'trace-create',\n      timestamp: $now.toISO(),\n      body: {\n        id: 'q-' + $execution.id,\n        name: 'research-question',\n        sessionId: $('Chat Input').item.json.sessionId,\n        input: $('Chat Input').item.json.chatInput,\n        output: $('Research Agent').item.json.output,\n        tags: ['financial-research-agent']\n      }\n    },\n    {\n      id: 'span-' + $execution.id,\n      type: 'span-create',\n      timestamp: $now.toISO(),\n      body: {\n        id: 'span-q-' + $execution.id,\n        traceId: 'q-' + $execution.id,\n        name: 'research-question',\n        startTime: $now.toISO(),\n        endTime: $now.toISO(),\n        input: $('Chat Input').item.json.chatInput,\n        output: $('Research Agent').item.json.output,\n        metadata: {\n          tools_used: $('Research Agent').item.json.intermediateSteps.map(s => s.action.tool),\n          tool_inputs: $('Research Agent').item.json.intermediateSteps.map(s => s.action.toolInput),\n          sources: $('Research Agent').item.json.intermediateSteps.map(s => String(s.observation).slice(0, 2000)),\n          cited_pages: $('Research Agent').item.json.output.match(/page \\d+/g) || [],\n          verifier: JSON.parse($('Answer Verifier').item.json.text),\n          shown_to_user: JSON.parse($('Answer Verifier').item.json.text).confidence >= 0.7\n        }\n      }\n    },\n    {\n      id: 'score-conf-' + $execution.id,\n      type: 'score-create',\n      timestamp: $now.toISO(),\n      body: { traceId: 'q-' + $execution.id, name: 'verifier_confidence', value: JSON.parse($('Answer Verifier').item.json.text).confidence }\n    },\n    {\n      id: 'score-sup-' + $execution.id,\n      type: 'score-create',\n      timestamp: $now.toISO(),\n      body: { traceId: 'q-' + $execution.id, name: 'supported', value: JSON.parse($('Answer Verifier').item.json.text).supported ? 1 : 0 }\n    }\n  ]\n}) }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.5,
+        "position": [
+          1520,
+          288
+        ],
+        "id": "d3d9c34e-882a-40d0-ae8f-c95a1b5eea2f",
+        "name": "Log to Langfuse",
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "CKWOu64cqSr4wAVw",
+            "name": "Langfuse API"
+          }
+        },
+        "onError": "continueRegularOutput"
       }
     ],
     "connections": {
@@ -552,7 +579,7 @@
         "main": [
           [
             {
-              "node": "Confidence Check",
+              "node": "Log to Langfuse",
               "type": "main",
               "index": 0
             }
@@ -580,6 +607,17 @@
             }
           ]
         ]
+      },
+      "Log to Langfuse": {
+        "main": [
+          [
+            {
+              "node": "Confidence Check",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
       }
     },
     "settings": {
@@ -592,9 +630,9 @@
     },
     "nodeGroups": [],
     "pinData": {},
-    "versionId": "0354fb55-256c-4479-912b-00ace401f11d",
+    "versionId": "754f1a19-9a04-4c0f-bd9c-53c5a952647f",
     "activeVersionId": null,
-    "versionCounter": 140,
+    "versionCounter": 156,
     "triggerCount": 0,
     "sourceWorkflowId": null,
     "tags": [],

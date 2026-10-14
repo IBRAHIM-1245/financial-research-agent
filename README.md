@@ -12,7 +12,8 @@ Agentic RAG system that answers questions on the 2025-26 annual reports of TCS, 
 - [x] Input guardrails (jailbreak, PII, secret keys, topic)
 - [x] Answer verification with confidence score (OpenAI JSON schema)
 - [x] SQL tool on 24 human-verified metrics (read-only role, verified view)
-- [ ] Langfuse tracing and evaluation
+- [x] Langfuse tracing (OpenTelemetry + custom ingestion with verifier scores)
+- [ ] Evaluation
 
 Setup: see `docs/SETUP.md`.
 

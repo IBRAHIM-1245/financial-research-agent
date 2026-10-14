@@ -24,3 +24,9 @@
 - Added Financial_Metrics_SQL tool (read-only agent_reader login, verified_metrics view only).
 - Prompt v3: SQL first for the 8 numeric metrics, search for everything else; operating-margin definition caveat.
 - Bug: agent selected no source_page and copied pages from conversation memory (attrition cited revenue pages). Fix: tool query must select source_page; verifier now rejects any cited page not in the sources.
+
+## Observability (Step 10)
+- n8n built-in OpenTelemetry -> Langfuse OTLP endpoint: one trace per run, one span per node with timing.
+- "Log to Langfuse" HTTP node -> Langfuse ingestion API: question, answer, tools, SQL/search inputs, sources, cited pages, verifier result, plus scores (verifier_confidence, supported). On Error = continue, so logging never blocks answers.
+- Lesson: a trace with no span was accepted but not listed; added a span-create.
+- Found via traces: agent sometimes runs the SQL tool twice for one question; verifier rejected a correct Wipro risks answer once (0.4) after passing it earlier (1.0).
