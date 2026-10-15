@@ -30,3 +30,10 @@
 - "Log to Langfuse" HTTP node -> Langfuse ingestion API: question, answer, tools, SQL/search inputs, sources, cited pages, verifier result, plus scores (verifier_confidence, supported). On Error = continue, so logging never blocks answers.
 - Lesson: a trace with no span was accepted but not listed; added a span-create.
 - Found via traces: agent sometimes runs the SQL tool twice for one question; verifier rejected a correct Wipro risks answer once (0.4) after passing it earlier (1.0).
+
+## Verifier v3 + Prepare Sources (2026-10-14/15)
+- Bug: same answer scored 1.0 then 0.4. Cause: verifier read raw nested-JSON tool output.
+- Fix: "Prepare Sources" code node builds clean "[Company, page N] text" sources and checks every cited page against retrieved pages (citations_ok, bad_citations). Verifier now judges facts only.
+- Agent prompt v4: company + topic in every search; cite only matching-company sources. Pinecone metadata filter on company.
+- Confidence Check requires confidence >= 0.7 AND citations_ok. New Langfuse score: citations_ok.
+- Result: TCS ESG 0.4 -> 1.0; Infosys risks passes with varied, correct pages.

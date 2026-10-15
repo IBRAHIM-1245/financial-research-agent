@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-10-14T08:45:02.219Z",
+    "updatedAt": "2026-10-15T07:13:10.218Z",
     "createdAt": "2026-10-12T14:31:38.623Z",
     "id": "1yZ3FHYOnYnWwz3C",
     "name": "Financial Research Agent v1",
@@ -291,11 +291,12 @@
             "conditions": [
               {
                 "id": "cc8702a4-0f5b-4006-b410-7e707d71bce1",
-                "leftValue": "={{ JSON.parse($('Answer Verifier').item.json.text).confidence }}",
+                "leftValue": "={{ $('Prepare Sources').item.json.citations_ok }}",
                 "rightValue": 0.7,
                 "operator": {
-                  "type": "number",
-                  "operation": "gte"
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
                 }
               }
             ],
@@ -439,7 +440,7 @@
           "genericAuthType": "httpBasicAuth",
           "sendBody": true,
           "specifyBody": "json",
-          "jsonBody": "={{ JSON.stringify({\n  batch: [\n    {\n      id: 'trace-' + $execution.id,\n      type: 'trace-create',\n      timestamp: $now.toISO(),\n      body: {\n        id: 'q-' + $execution.id,\n        name: 'research-question',\n        sessionId: $('Chat Input').item.json.sessionId,\n        input: $('Chat Input').item.json.chatInput,\n        output: $('Research Agent').item.json.output,\n        tags: ['financial-research-agent']\n      }\n    },\n    {\n      id: 'span-' + $execution.id,\n      type: 'span-create',\n      timestamp: $now.toISO(),\n      body: {\n        id: 'span-q-' + $execution.id,\n        traceId: 'q-' + $execution.id,\n        name: 'research-question',\n        startTime: $now.toISO(),\n        endTime: $now.toISO(),\n        input: $('Chat Input').item.json.chatInput,\n        output: $('Research Agent').item.json.output,\n        metadata: {\n          tools_used: $('Research Agent').item.json.intermediateSteps.map(s => s.action.tool),\n          tool_inputs: $('Research Agent').item.json.intermediateSteps.map(s => s.action.toolInput),\n          sources: $('Research Agent').item.json.intermediateSteps.map(s => String(s.observation).slice(0, 2000)),\n          cited_pages: $('Research Agent').item.json.output.match(/page \\d+/g) || [],\n          verifier: JSON.parse($('Answer Verifier').item.json.text),\n          shown_to_user: JSON.parse($('Answer Verifier').item.json.text).confidence >= 0.7\n        }\n      }\n    },\n    {\n      id: 'score-conf-' + $execution.id,\n      type: 'score-create',\n      timestamp: $now.toISO(),\n      body: { traceId: 'q-' + $execution.id, name: 'verifier_confidence', value: JSON.parse($('Answer Verifier').item.json.text).confidence }\n    },\n    {\n      id: 'score-sup-' + $execution.id,\n      type: 'score-create',\n      timestamp: $now.toISO(),\n      body: { traceId: 'q-' + $execution.id, name: 'supported', value: JSON.parse($('Answer Verifier').item.json.text).supported ? 1 : 0 }\n    }\n  ]\n}) }}",
+          "jsonBody": "={{ JSON.stringify({\n  batch: [\n    {\n      id: 'trace-' + $execution.id,\n      type: 'trace-create',\n      timestamp: $now.toISO(),\n      body: {\n        id: 'q-' + $execution.id,\n        name: 'research-question',\n        sessionId: $('Chat Input').item.json.sessionId,\n        input: $('Chat Input').item.json.chatInput,\n        output: $('Research Agent').item.json.output,\n        tags: ['financial-research-agent']\n      }\n    },\n    {\n      id: 'span-' + $execution.id,\n      type: 'span-create',\n      timestamp: $now.toISO(),\n      body: {\n        id: 'span-q-' + $execution.id,\n        traceId: 'q-' + $execution.id,\n        name: 'research-question',\n        startTime: $now.toISO(),\n        endTime: $now.toISO(),\n        input: $('Chat Input').item.json.chatInput,\n        output: $('Research Agent').item.json.output,\n        metadata: {\n          tools_used: $('Research Agent').item.json.intermediateSteps.map(s => s.action.tool),\n          tool_inputs: $('Research Agent').item.json.intermediateSteps.map(s => s.action.toolInput),\n          sources: $('Prepare Sources').item.json.sources.slice(0, 4000),\n          cited_pages: $('Prepare Sources').item.json.cited_pages,\n          retrieved_pages: $('Prepare Sources').item.json.retrieved_pages,\n          bad_citations: $('Prepare Sources').item.json.bad_citations,\n          citations_ok: $('Prepare Sources').item.json.citations_ok,\n          verifier: JSON.parse($('Answer Verifier').item.json.text),\n          shown_to_user: JSON.parse($('Answer Verifier').item.json.text).confidence >= 0.7 && $('Prepare Sources').item.json.citations_ok\n        }\n      }\n    },\n    {\n      id: 'score-conf-' + $execution.id,\n      type: 'score-create',\n      timestamp: $now.toISO(),\n      body: { traceId: 'q-' + $execution.id, name: 'verifier_confidence', value: JSON.parse($('Answer Verifier').item.json.text).confidence }\n    },\n    {\n      id: 'score-sup-' + $execution.id,\n      type: 'score-create',\n      timestamp: $now.toISO(),\n      body: { traceId: 'q-' + $execution.id, name: 'supported', value: JSON.parse($('Answer Verifier').item.json.text).supported ? 1 : 0 }\n    },\n    {\n      id: 'score-cite-' + $execution.id,\n      type: 'score-create',\n      timestamp: $now.toISO(),\n      body: { traceId: 'q-' + $execution.id, name: 'citations_ok', value: $('Prepare Sources').item.json.citations_ok ? 1 : 0 }\n    }\n  ]\n}) }}",
           "options": {}
         },
         "type": "n8n-nodes-base.httpRequest",
@@ -663,9 +664,9 @@
     },
     "nodeGroups": [],
     "pinData": {},
-    "versionId": "a07c3ddc-3d4b-470f-8488-246a7c00f3ed",
+    "versionId": "d2b895e2-aada-4fd4-abe5-7bd92a23bbc9",
     "activeVersionId": null,
-    "versionCounter": 169,
+    "versionCounter": 172,
     "triggerCount": 0,
     "sourceWorkflowId": null,
     "tags": [],
