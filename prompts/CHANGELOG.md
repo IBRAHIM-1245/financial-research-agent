@@ -37,3 +37,9 @@
 - Agent prompt v4: company + topic in every search; cite only matching-company sources. Pinecone metadata filter on company.
 - Confidence Check requires confidence >= 0.7 AND citations_ok. New Langfuse score: citations_ok.
 - Result: TCS ESG 0.4 -> 1.0; Infosys risks passes with varied, correct pages.
+
+## Web Search + Agent v9 (2026-10-15)
+- Added Web_Search tool (HTTP Request -> SerpAPI, Query Auth, optimized to organic_results title/link/source/date/snippet).
+- Prepare Sources reads web results as "[Web: site, date]"; verifier checks web facts only against web sources.
+- Bugs found: future event described as past; analyst "Buy" rating and price target repeated; web citations missing "Web:" and contradictory dates.
+- Fixes: today's date injected at top of system prompt (Expression mode); skip ratings/price targets; date and publisher rules; ANSWER FORMAT with one full example answer (rules alone did not fix the format, the example did).
