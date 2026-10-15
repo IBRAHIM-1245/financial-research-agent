@@ -6,3 +6,5 @@ openai>=1.0
 pinecone>=5.0
 # Loads API keys from the .env file so they never appear in code
 python-dotenv>=1.0
+# Calls the n8n webhook from the evaluation script
+requests>=2.31

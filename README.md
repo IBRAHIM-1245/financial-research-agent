@@ -13,7 +13,7 @@ Agentic RAG system that answers questions on the 2025-26 annual reports of TCS, 
 - [x] Answer verification with confidence score (OpenAI JSON schema)
 - [x] SQL tool on 24 human-verified metrics (read-only role, verified view)
 - [x] Langfuse tracing (OpenTelemetry + custom ingestion with verifier scores)
-- [ ] Evaluation
+- [x] Evaluation: 20/20 on the test set, 13/13 citations correct (eval/run_eval.py)
 
 Setup: see `docs/SETUP.md`.
 
