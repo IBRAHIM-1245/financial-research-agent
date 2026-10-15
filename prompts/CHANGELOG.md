@@ -43,3 +43,9 @@
 - Prepare Sources reads web results as "[Web: site, date]"; verifier checks web facts only against web sources.
 - Bugs found: future event described as past; analyst "Buy" rating and price target repeated; web citations missing "Web:" and contradictory dates.
 - Fixes: today's date injected at top of system prompt (Expression mode); skip ratings/price targets; date and publisher rules; ANSWER FORMAT with one full example answer (rules alone did not fix the format, the example did).
+
+## Error handling (2026-10-15)
+- Input Guardrail, Research Agent, Answer Verifier: On Error -> error output -> "Error Message" node (friendly text, no technical details).
+- Tested by setting an invalid model: agent failure -> friendly message. Guard LLM failure -> guardrail "fails closed" (refuses) - safe by design.
+- Bug found: wires first came from success outputs, so the error message replaced every answer. Fixed by wiring only the Error branches.
+- Bug found: system prompt was in Fixed mode, so the {{ $now }} date was sent as literal text. Switched to Expression.
