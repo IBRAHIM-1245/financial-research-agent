@@ -8,3 +8,5 @@ pinecone>=5.0
 python-dotenv>=1.0
 # Calls the n8n webhook from the evaluation script
 requests>=2.31
+# Chat user interface
+streamlit>=1.38

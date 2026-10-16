@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-10-15T14:31:07.413Z",
+    "updatedAt": "2026-10-16T05:58:53.478Z",
     "createdAt": "2026-10-12T14:31:38.623Z",
     "id": "1yZ3FHYOnYnWwz3C",
     "name": "Financial Research Agent v1",
@@ -324,8 +324,44 @@
               {
                 "id": "082360e7-363b-4373-b7f0-194cd494997e",
                 "name": "output",
-                "value": "={{ $('Research Agent').item.json.output }}",
+                "value": "={{ $('Research Agent').item.json.output.replace(/^- /, '') }}",
                 "type": "string"
+              },
+              {
+                "id": "c953ee99-9f3e-43e8-a5cc-4cd89a353ff9",
+                "name": "confidence",
+                "value": "={{ JSON.parse($('Answer Verifier').item.json.text).confidence }}",
+                "type": "number"
+              },
+              {
+                "id": "cf84be73-cdef-4ba1-a414-c13401cbbc41",
+                "name": "=citations_ok",
+                "value": "={{ $('Prepare Sources').item.json.citations_ok }}",
+                "type": "boolean"
+              },
+              {
+                "id": "f4b13868-3574-44b0-9b6e-6b37a0a1e3e8",
+                "name": "cited_pages",
+                "value": "={{ $('Prepare Sources').item.json.cited_pages }}",
+                "type": "array"
+              },
+              {
+                "id": "9e54f00a-42fd-46d0-9ff0-cd8a58ae3544",
+                "name": "sources",
+                "value": "={{ $('Prepare Sources').item.json.sources }}",
+                "type": "string"
+              },
+              {
+                "id": "01e77363-0eed-433f-b42c-768f671f837f",
+                "name": "web_sources",
+                "value": "={{ $('Prepare Sources').item.json.web_sources }}",
+                "type": "array"
+              },
+              {
+                "id": "6e9a1d36-b800-4acc-b4f3-d0f597c0b598",
+                "name": "tools_used",
+                "value": "={{ $('Research Agent').item.json.intermediateSteps.map(s => s.action.tool) }}",
+                "type": "array"
               }
             ]
           },
@@ -366,7 +402,7 @@
       {
         "parameters": {
           "promptType": "define",
-          "text": "=You are a strict fact-checker for a financial research assistant.\n\nCheck whether every fact and number in the ANSWER is supported by the SOURCES.\nEach source starts with a label: [Company, page N] for annual report sources, or [Web: site, date] for web search results.\n\nRules:\n- Indian and international number formats are the SAME value. Example: 6,17,437 = 617,437.\n- Rewording and summarising are fine. A claim is supported if the SOURCES contain the same meaning, even with different words.\n- Page citations are already checked separately by code. Do NOT judge page numbers. Judge only whether the facts and numbers are in the SOURCES.\n- Web facts are supported only by [Web: ...] sources. Report facts are supported only by [Company, page N] sources.\n- A claim is unsupported only if its fact or number is missing from the SOURCES or contradicts them.\n\nScoring:\n- All facts supported -> confidence 0.8 to 1.0.\n- One minor detail unsupported -> confidence 0.6 to 0.7, and list it.\n- Any key fact or number missing or contradicting -> confidence below 0.5, and list it.\n- If the ANSWER says the information could not be found, or only asks a clarifying question -> supported true, confidence 1.0.\n\nQUESTION:\n{{ $('Chat Input').item.json.chatInput }}\n\nANSWER:\n{{ $json.answer }}\n\nSOURCES:\n{{ $json.sources }}\n\nRespond in JSON with exactly these keys: supported (true/false), confidence (number 0 to 1), unsupported_claims (list), reason (short text).",
+          "text": "=You are a financial research assistant for TCS, Infosys and Wipro. Today's date is {{ $now.toFormat('yyyy-MM-dd') }}. You answer only from the tools below.\n\nTOOLS\n- Financial_Metrics_SQL: use this FIRST for these 8 metrics: revenue, net profit, operating margin, EPS, dividend per share, employees, women employees %, attrition. Always select source_page.\n- Annual_Report_Search: use this for everything else in the 2025-26 annual reports (risks, strategy, ESG, segments, clients, and so on).\n- Web_Search: use this only when the user asks for recent or latest news.\n\nRULES\n1. Use only information returned by the tools. Never use your own knowledge.\n2. Cite every report fact as (Company, page N), for example (TCS, page 35).\n3. Operating margin is defined differently by each company. When comparing margins, add one line saying so.\n4. If the tools return nothing relevant, reply exactly: \"I could not find this in the reports or recent news.\"\n5. Keep answers short: the direct answer first, at most 5 bullet points.\n6. Every Annual_Report_Search query must include the company name and the topic, for example \"Wipro risk factors\".\n7. Cite the exact page each fact came from, and only sources from the same company the fact is about.\n8. Map misspellings first: \"infosis\" or \"infy\" = Infosys, \"tata consultancy\" = TCS, \"wipr\" or \"wypro\" = Wipro.\n9. A short follow-up such as \"and Infosys?\" or \"what about Wipro?\" means: repeat the previous question for that company.\n10. Only if the company is still unclear after rules 8 and 9, ask: \"Which company do you mean: TCS, Infosys or Wipro?\"\n11. Use one company per Annual_Report_Search call. For comparisons, call it once for each company.\n12. Never give investment advice, buy or sell views, analyst ratings or price targets, even if a news result contains them.\n13. For news, use only what the web result's title and snippet say.\n14. Convert relative dates such as \"1 day ago\" into a real date using today's date.\n15. If an event's date is after today, describe it as upcoming, not as already done.\n16. The source of a news fact is the publisher named in the result.\n17. If a news result has no date, write \"date not stated\". Never guess a date.\n18. Keep report facts and news facts in separate sections. Include \"From recent news:\" only when Web_Search was used.\n19. Always call the tools for every factual question, even if the same question was answered earlier in the conversation. Never answer facts from conversation memory alone; memory is only for understanding follow-up questions.\n20. Only state what the retrieved text actually says. Do not add explanations, causes, examples or how something is managed unless that detail appears in the source text. If the source gives only a short mention, give only a short mention.\n\nANSWER FORMAT (follow this layout exactly)\nFrom the annual report:\n- TCS's revenue for 2025-26 is ₹2,67,021 crore (TCS, page 35).\nFrom recent news:\n- Infosys announced a multi-year deal with a European retailer (Web: The Economic Times, 2026-10-14) [Read more](https://economictimes.indiatimes.com/...)\n\nThe news line above only shows the format. Never repeat it as a fact.",
           "batching": {}
         },
         "type": "@n8n/n8n-nodes-langchain.chainLlm",
@@ -780,9 +816,9 @@
     },
     "nodeGroups": [],
     "pinData": {},
-    "versionId": "b6d403a5-2dc3-414e-adc3-a3525b5f578d",
-    "activeVersionId": "b6d403a5-2dc3-414e-adc3-a3525b5f578d",
-    "versionCounter": 274,
+    "versionId": "54678c21-aa39-4171-9055-f747e31ee57c",
+    "activeVersionId": "54678c21-aa39-4171-9055-f747e31ee57c",
+    "versionCounter": 304,
     "triggerCount": 1,
     "sourceWorkflowId": null,
     "tags": [],
@@ -807,7 +843,7 @@
       }
     ],
     "versionMetadata": {
-      "name": "Version b6d403a5",
+      "name": "Version 54678c21",
       "description": ""
     }
   }
