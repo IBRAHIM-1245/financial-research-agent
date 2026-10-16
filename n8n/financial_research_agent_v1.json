@@ -1,6 +1,6 @@
 [
   {
-    "updatedAt": "2026-10-16T06:59:01.295Z",
+    "updatedAt": "2026-10-16T19:50:10.441Z",
     "createdAt": "2026-10-12T14:31:38.623Z",
     "id": "1yZ3FHYOnYnWwz3C",
     "name": "Financial Research Agent v1",
@@ -320,8 +320,8 @@
         "type": "n8n-nodes-base.if",
         "typeVersion": 2.3,
         "position": [
-          2144,
-          272
+          2624,
+          224
         ],
         "id": "ffa8da3d-e5b0-433c-8987-5f21c4a659ae",
         "name": "Confidence Check"
@@ -379,8 +379,8 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.5,
         "position": [
-          2384,
-          192
+          2848,
+          80
         ],
         "id": "7475028a-5e45-4ab5-9608-9829d802b4a0",
         "name": "Final Answer"
@@ -402,8 +402,8 @@
         "type": "n8n-nodes-base.set",
         "typeVersion": 3.5,
         "position": [
-          2400,
-          384
+          2864,
+          368
         ],
         "id": "19d8d511-41b9-402f-8bef-b69004f6ef47",
         "name": "Low Confidence Message"
@@ -553,38 +553,11 @@
       },
       {
         "parameters": {
-          "method": "POST",
-          "url": "https://cloud.langfuse.com/api/public/ingestion",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpBasicAuth",
-          "sendBody": true,
-          "specifyBody": "json",
-          "jsonBody": "={{ JSON.stringify({\n  batch: [\n    {\n      id: 'trace-' + $execution.id,\n      type: 'trace-create',\n      timestamp: $now.toISO(),\n      body: {\n        id: 'q-' + $execution.id,\n        name: 'research-question',\n        sessionId: $('Chat Input').item.json.sessionId,\n        input: $('Chat Input').item.json.chatInput,\n        output: $('Research Agent').item.json.output,\n        tags: ['financial-research-agent']\n      }\n    },\n    {\n      id: 'span-' + $execution.id,\n      type: 'span-create',\n      timestamp: $now.toISO(),\n      body: {\n        id: 'span-q-' + $execution.id,\n        traceId: 'q-' + $execution.id,\n        name: 'research-question',\n        startTime: $now.toISO(),\n        endTime: $now.toISO(),\n        input: $('Chat Input').item.json.chatInput,\n        output: $('Research Agent').item.json.output,\n        metadata: {\n          tools_used: $('Research Agent').item.json.intermediateSteps.map(s => s.action.tool),\n          tool_inputs: $('Research Agent').item.json.intermediateSteps.map(s => s.action.toolInput),\n          sources: $('Prepare Sources').item.json.sources.slice(0, 4000),\n          cited_pages: $('Prepare Sources').item.json.cited_pages,\n          retrieved_pages: $('Prepare Sources').item.json.retrieved_pages,\n          bad_citations: $('Prepare Sources').item.json.bad_citations,\n          citations_ok: $('Prepare Sources').item.json.citations_ok,\n          verifier: JSON.parse($('Answer Verifier').item.json.text),\n          shown_to_user: JSON.parse($('Answer Verifier').item.json.text).confidence >= 0.7 && $('Prepare Sources').item.json.citations_ok\n        }\n      }\n    },\n    {\n      id: 'score-conf-' + $execution.id,\n      type: 'score-create',\n      timestamp: $now.toISO(),\n      body: { traceId: 'q-' + $execution.id, name: 'verifier_confidence', value: JSON.parse($('Answer Verifier').item.json.text).confidence }\n    },\n    {\n      id: 'score-sup-' + $execution.id,\n      type: 'score-create',\n      timestamp: $now.toISO(),\n      body: { traceId: 'q-' + $execution.id, name: 'supported', value: JSON.parse($('Answer Verifier').item.json.text).supported ? 1 : 0 }\n    },\n    {\n      id: 'score-cite-' + $execution.id,\n      type: 'score-create',\n      timestamp: $now.toISO(),\n      body: { traceId: 'q-' + $execution.id, name: 'citations_ok', value: $('Prepare Sources').item.json.citations_ok ? 1 : 0 }\n    }\n  ]\n}) }}",
-          "options": {}
-        },
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.5,
-        "position": [
-          1936,
-          272
-        ],
-        "id": "d3d9c34e-882a-40d0-ae8f-c95a1b5eea2f",
-        "name": "Log to Langfuse",
-        "credentials": {
-          "httpBasicAuth": {
-            "id": "CKWOu64cqSr4wAVw",
-            "name": "Langfuse API"
-          }
-        },
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
           "assignments": {
             "assignments": [
               {
                 "id": "ac9491f9-5ff8-46c2-a58f-d82b0dcd1ad0",
-                "name": "Error Message",
+                "name": "output",
                 "value": "Sorry, something went wrong on our side. Please try again in a minute.",
                 "type": "string"
               }
@@ -600,6 +573,82 @@
         ],
         "id": "2d9ea61a-40ab-41c2-b610-4d852f180986",
         "name": "Error Message"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Builds what we send to Langfuse:\n// 1) the trace (question, answer, sources) in OpenTelemetry format - the new v4 way\n// 2) the three scores - Langfuse keeps accepting scores after 16 Nov 2026\n\nconst sources = $('Prepare Sources').first().json;\nconst verifier = JSON.parse($('Answer Verifier').first().json.text);\nconst question = $('Chat Input').first().json.chatInput;\nconst sessionId = $('Chat Input').first().json.sessionId || 'no-session';\n\n// random hex ids: a trace id is 32 characters, a span id is 16\nfunction randomHex(length) {\n  let text = '';\n  for (let i = 0; i < length; i++) {\n    text += Math.floor(Math.random() * 16).toString(16);\n  }\n  return text;\n}\nconst traceId = randomHex(32);\nconst spanId = randomHex(16);\n\n// time now in nanoseconds, as text (the number is too big for JavaScript)\nconst now = String(Date.now()) + '000000';\n\n// tools the agent used\nconst steps = $('Research Agent').first().json.intermediateSteps || [];\nconst toolsUsed = steps.map(step => step.action.tool);\n\nconst shownToUser = verifier.confidence >= 0.7 && sources.citations_ok === true;\n\n// one OpenTelemetry attribute\nfunction attr(key, value) {\n  return { key: key, value: { stringValue: String(value) } };\n}\n\nconst otelBody = {\n  resourceSpans: [{\n    resource: { attributes: [attr('service.name', 'financial-research-agent')] },\n    scopeSpans: [{\n      scope: { name: 'n8n-prepare-langfuse-data' },\n      spans: [{\n        traceId: traceId,\n        spanId: spanId,\n        name: 'research-answer',\n        kind: 1,\n        startTimeUnixNano: now,\n        endTimeUnixNano: now,\n        attributes: [\n          attr('langfuse.trace.name', 'financial-research-agent'),\n          attr('langfuse.session.id', sessionId),\n          attr('langfuse.trace.input', question),\n          attr('langfuse.trace.output', sources.answer),\n          attr('langfuse.observation.input', question),\n          attr('langfuse.observation.output', sources.answer),\n          attr('langfuse.trace.metadata.tools_used', JSON.stringify(toolsUsed)),\n          attr('langfuse.trace.metadata.cited_pages', JSON.stringify(sources.cited_pages)),\n          attr('langfuse.trace.metadata.bad_citations', JSON.stringify(sources.bad_citations)),\n          attr('langfuse.trace.metadata.shown_to_user', shownToUser),\n          attr('langfuse.trace.metadata.verifier_reason', verifier.reason),\n          attr('langfuse.observation.metadata.sources', String(sources.sources).slice(0, 5000)),\n        ],\n      }],\n    }],\n  }],\n};\n\n// one score event\nfunction score(name, value) {\n  const id = name + '-' + traceId;\n  return {\n    id: id,\n    type: 'score-create',\n    timestamp: new Date().toISOString(),\n    body: { id: id, traceId: traceId, name: name, value: value },\n  };\n}\n\nconst scoreBody = {\n  batch: [\n    score('verifier_confidence', verifier.confidence),\n    score('supported', verifier.supported ? 1 : 0),\n    score('citations_ok', sources.citations_ok ? 1 : 0),\n  ],\n};\n\nreturn [{ json: { trace_id: traceId, otel_body: otelBody, score_body: scoreBody } }];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1968,
+          272
+        ],
+        "id": "9c7bf954-9f3c-431e-a8a4-22370f21a15c",
+        "name": "Prepare Langfuse Data"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://cloud.langfuse.com/api/public/otel/v1/traces",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "x-langfuse-ingestion-version",
+                "value": "4"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "=   {{ JSON.stringify($('Prepare Langfuse Data').item.json.otel_body) }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.5,
+        "position": [
+          2192,
+          240
+        ],
+        "id": "d3d9c34e-882a-40d0-ae8f-c95a1b5eea2f",
+        "name": "Send Trace to Langfuse",
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "CKWOu64cqSr4wAVw",
+            "name": "Langfuse API"
+          }
+        },
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "   https://cloud.langfuse.com/api/public/ingestion",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpBasicAuth",
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "=   {{ JSON.stringify($('Prepare Langfuse Data').item.json.score_body) }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.5,
+        "position": [
+          2416,
+          240
+        ],
+        "id": "2bedcf74-fdb8-45b1-8024-47da912de570",
+        "name": "Send Scores to Langfuse",
+        "credentials": {
+          "httpBasicAuth": {
+            "id": "CKWOu64cqSr4wAVw",
+            "name": "Langfuse API"
+          }
+        },
+        "onError": "continueRegularOutput"
       }
     ],
     "connections": {
@@ -745,7 +794,7 @@
         "main": [
           [
             {
-              "node": "Log to Langfuse",
+              "node": "Prepare Langfuse Data",
               "type": "main",
               "index": 0
             }
@@ -803,7 +852,29 @@
           ]
         ]
       },
-      "Log to Langfuse": {
+      "Prepare Langfuse Data": {
+        "main": [
+          [
+            {
+              "node": "Send Trace to Langfuse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Trace to Langfuse": {
+        "main": [
+          [
+            {
+              "node": "Send Scores to Langfuse",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Scores to Langfuse": {
         "main": [
           [
             {
@@ -825,9 +896,9 @@
     },
     "nodeGroups": [],
     "pinData": {},
-    "versionId": "36438672-28bf-4f68-a49a-16b61fed1483",
-    "activeVersionId": "36438672-28bf-4f68-a49a-16b61fed1483",
-    "versionCounter": 313,
+    "versionId": "528a0500-4814-45f5-958e-d10ca0594d13",
+    "activeVersionId": "528a0500-4814-45f5-958e-d10ca0594d13",
+    "versionCounter": 343,
     "triggerCount": 1,
     "sourceWorkflowId": null,
     "tags": [],
@@ -852,7 +923,7 @@
       }
     ],
     "versionMetadata": {
-      "name": "Version 36438672",
+      "name": "Version 528a0500",
       "description": ""
     }
   }
