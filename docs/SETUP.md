@@ -22,7 +22,7 @@ python ingestion/3_embed_upload.py    # chunks -> embeddings -> Pinecone index "
 ## 4. Agent (n8n)
 ```bash
 npm install -g n8n
-./scripts/start_n8n.sh                # port 5678, keep it Private
+./scripts/n8nstart.sh                # port 5678, keep it Private
 ```
 1. Import `n8n/Financial Research Agent.json`.
 2. Add credentials in n8n: OpenAI, Pinecone, Cohere, Postgres (`agent_reader`), SerpAPI and Langfuse.
