@@ -81,7 +81,7 @@ n8n/            agent workflow and metrics-setup workflow (exported JSON)
 prompts/        agent, verifier and guardrail prompts
 eval/           test set, evaluation script, latest results
 docs/           setup guide, metrics verification, screenshots
-scripts/        n8n start script, search test
+scripts/        n8n start script
 ```
 
 ## Run it

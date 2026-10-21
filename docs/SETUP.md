@@ -24,7 +24,7 @@ python ingestion/3_embed_upload.py    # chunks -> embeddings -> Pinecone index "
 npm install -g n8n
 ./scripts/start_n8n.sh                # port 5678, keep it Private
 ```
-1. Import `n8n/financial_research_agent_v1.json`.
+1. Import `n8n/Financial Research Agent.json`.
 2. Add credentials in n8n: OpenAI, Pinecone, Cohere, Postgres (`agent_reader`), SerpAPI and Langfuse.
 3. Publish the workflow, then put its chat webhook URL in `.env` as `CHAT_URL`.
 

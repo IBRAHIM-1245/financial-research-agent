@@ -2,6 +2,8 @@
 # Sends each question to the n8n webhook, then shows the answer, the fact-check
 # scores, a button for each annual report used, and source cards with the real
 # report page and the number highlighted.
+import base64
+import io
 import os
 import re
 import time
@@ -113,10 +115,8 @@ def find_pdf(company):
 @st.cache_resource(show_spinner=False)
 def pdf_bytes(pdf_path):
     # reads the PDF once and keeps it in memory for the download buttons
-    file = open(pdf_path, "rb")
-    data = file.read()
-    file.close()
-    return data
+    with open(pdf_path, "rb") as file:
+        return file.read()
 
 
 def read_page(item):
@@ -162,20 +162,12 @@ def page_image(pdf_path, page, highlights):
     for text in highlights:
         for match in pdf_page.search(text):
             image.draw_rect(match, fill=(246, 226, 122, 110), stroke=(14, 107, 82), stroke_width=2)
-    picture = image.annotated
+    # put the picture straight into the page as base64 text
+    # (Streamlit's separate /media image links are blocked in some Codespaces)
+    buffer = io.BytesIO()
+    image.annotated.save(buffer, format="PNG")
     pdf.close()
-    return picture
-
-
-def web_link(item):
-    # a web source can be a dict or a text line ending with (link)
-    if isinstance(item, dict):
-        return item.get("title", "News"), item.get("link", "")
-    text = str(item)
-    if "(http" in text:
-        start = text.rfind("(http")
-        return text[:start].strip(), text[start + 1:-1]
-    return text, ""
+    return '<img src="data:image/png;base64,' + base64.b64encode(buffer.getvalue()).decode() + '" style="width:100%">'
 
 
 def show_report_buttons(companies, cited, message_id):
@@ -217,7 +209,7 @@ def show_source_card(reply, company, page, highlights):
             pdf_path = find_pdf(company)
             if pdf_path:
                 try:
-                    st.image(page_image(pdf_path, page, highlights), use_container_width=True)
+                    st.markdown(page_image(pdf_path, page, highlights), unsafe_allow_html=True)
                 except Exception:
                     st.caption("Could not show this page.")
             else:
@@ -273,11 +265,10 @@ def show_answer(reply, seconds, message_id):
     if news:
         st.markdown("#### 🌐 Recent news used")
     for item in news:
-        title, link = web_link(item)
         with st.container(border=True):
-            st.markdown(title)
-            if link:
-                st.link_button("Read article", link)
+            st.markdown(item.get("title", "News"))
+            if item.get("link"):
+                st.link_button("Read article", item["link"])
 
     # 6. process steps
     with st.expander("How this answer was made"):
