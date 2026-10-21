@@ -3,9 +3,9 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## Financial Research Agent - v1\nAnswers questions about the 2025-26 annual reports of TCS, Infosys and Wipro.\n\nFlow: Chat Input -> Research Agent -> Annual Report Search (fetch 20 -> Cohere rerank to 5) -> cited answer.\n\nNext versions add: input guardrail, output check, error workflow, Langfuse tracing.",
-        "height": 220,
-        "width": 520,
+        "content": "## Financial Research Agent\nAnswers questions about the 2025-26 annual reports of TCS, Infosys and Wipro.\n\nFlow: Chat Input → Input Guardrail → Research Agent (report search with Cohere rerank, verified metrics SQL, news search) → Prepare Sources (page check) → Answer Verifier → Confidence Check → answer or \"could not verify\".\n\nAlso: error branch, Langfuse tracing and scores.",
+        "height": 188,
+        "width": 568,
         "color": 4
       },
       "id": "4e1d98ff-064b-453d-8cf0-9f4b54453f62",
@@ -13,14 +13,14 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        16,
-        -16
+        -240,
+        64
       ]
     },
     {
       "parameters": {
         "content": "### Retrieval\nFetch 20 chunks from Pinecone, rerank with Cohere, keep top 5.\nEmbedding model MUST match ingestion: text-embedding-3-small.",
-        "height": 400,
+        "height": 144,
         "width": 420,
         "color": 5
       },
@@ -886,7 +886,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "19d62c24-ec09-4fad-b0fb-8b3f16d01610",
+  "versionId": "0f5c965a-d1d2-473d-8ace-b31687599f13",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "b7ba73761a6e4b13caf0bdf60d94620dfd5455fa73e300b1c4bda282f07c640e"
